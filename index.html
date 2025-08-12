@@ -8,17 +8,20 @@
       body {
         margin: 0;
         background: black;
-        overflow: hidden;
         font-family: monospace;
         height: 100vh;
         color: #0f0;
+        box-sizing: border-box;
+        overflow-x: hidden;
       }
 
-      /* Canvas Matrix */
-      #matrixCanvas {
+      /* Falling Hearts */
+      #heartCanvas {
         position: fixed;
         inset: 0;
         z-index: 0;
+        width: 100%;
+        height: 100%;
         background: black;
       }
 
@@ -29,7 +32,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 500px;
+        font-size: 30vw;
         color: white;
         background: pink;
         z-index: 10;
@@ -50,11 +53,13 @@
         color: white;
       }
       .center-text {
-        font-size: 200px;
+        font-size: 10vw;
         font-weight: bold;
         opacity: 0;
         transition: opacity 1s ease-in-out;
         text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+        max-width: 90%;
+        word-wrap: break-word;
       }
       .show {
         opacity: 1;
@@ -63,8 +68,8 @@
       /* Trái tim chứa câu chúc */
       .heart-shape {
         position: relative;
-        width: 300px;
-        height: 270px;
+        width: 25vw;
+        height: 22vw;
         background-color: pink;
         transform: rotate(-45deg);
         animation: heartbeat 1.2s infinite;
@@ -74,18 +79,18 @@
       .heart-shape::after {
         content: "";
         position: absolute;
-        width: 300px;
-        height: 270px;
+        width: 25vw;
+        height: 22vw;
         background-color: pink;
         border-radius: 50%;
         z-index: 0;
       }
       .heart-shape::before {
-        top: -150px;
+        top: -12.5vw;
         left: 0;
       }
       .heart-shape::after {
-        left: 150px;
+        left: 12.5vw;
         top: 0;
       }
       .heart-text {
@@ -98,8 +103,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 15px;
-        font-size: 27px !important;
+        padding: 2vw;
+        font-size: 2vw !important;
         color: white;
         text-align: center;
         line-height: 1.4;
@@ -117,23 +122,82 @@
         }
       }
 
+      /* Hiệu ứng lấp lánh quanh trái tim */
+      .sparkle {
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.8);
+        animation: sparkle 1.5s infinite;
+        z-index: 1;
+      }
+      @keyframes sparkle {
+        0% {
+          opacity: 0;
+          transform: scale(0.5);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.2);
+        }
+        100% {
+          opacity: 0;
+          transform: scale(0.5);
+        }
+      }
+
       /* Nút bật nhạc */
       #play-btn {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
-        padding: 10px 15px;
-        font-size: 16px;
+        bottom: 2vw;
+        right: 2vw;
+        padding: 1.5vw 2vw;
+        font-size: 3vw;
         background: hotpink;
         border: none;
         border-radius: 8px;
         cursor: pointer;
         z-index: 999;
       }
+
+      /* Media Queries for Mobile */
+      @media screen and (max-width: 768px) {
+        #countdown {
+          font-size: 20vw;
+        }
+        .center-text {
+          font-size: 8vw;
+        }
+        .heart-shape {
+          width: 50vw;
+          height: 45vw;
+        }
+        .heart-shape::before,
+        .heart-shape::after {
+          width: 50vw;
+          height: 45vw;
+        }
+        .heart-shape::before {
+          top: -25vw;
+        }
+        .heart-shape::after {
+          left: 25vw;
+        }
+        .heart-text {
+          font-size: 4vw !important;
+          padding: 3vw;
+        }
+        #play-btn {
+          font-size: 4vw;
+          padding: 2vw 3vw;
+        }
+      }
     </style>
   </head>
   <body>
-    <canvas id="matrixCanvas"></canvas>
+    <canvas id="heartCanvas"></canvas>
 
     <div id="countdown">3</div>
 
@@ -143,35 +207,52 @@
     </div>
 
     <!-- Nhạc nền -->
-    <audio id="bg-music" loop>
+    <audio id="bg-music" loop preload="auto">
       <source src="./cmsn.mp3" type="audio/mpeg" />
     </audio>
     <button id="play-btn">🎵 Bật nhạc</button>
 
     <script>
-      const canvas = document.getElementById("matrixCanvas");
-      const ctx = canvas.getContext("2d");
-      canvas.height = window.innerHeight;
-      canvas.width = window.innerWidth;
+      // Falling Hearts Canvas
+      const heartCanvas = document.getElementById("heartCanvas");
+      const heartCtx = heartCanvas.getContext("2d");
+      const heartFontSize = 12;
+      let heartDrops = [];
 
-      // Matrix setup
-      const letters = "HAPPY BIRTHDAY ".split("");
-      const fontSize = 14;
-      const columns = canvas.width / fontSize;
-      const drops = Array(Math.floor(columns)).fill(1);
+      // Responsive canvas sizing
+      function resizeCanvas() {
+        heartCanvas.height = window.innerHeight;
+        heartCanvas.width = window.innerWidth;
 
-      function drawMatrix() {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#0F0";
-        ctx.font = fontSize + "px monospace";
-        for (let i = 0; i < drops.length; i++) {
-          const text = letters[Math.floor(Math.random() * letters.length)];
-          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-            drops[i] = 0;
+        const heartColumns = Math.floor(heartCanvas.width / heartFontSize);
+        const newHeartDrops = new Array(heartColumns).fill(1);
+        for (let i = 0; i < Math.min(heartDrops.length, heartColumns); i++) {
+          newHeartDrops[i] = heartDrops[i] || 1;
+        }
+        heartDrops = newHeartDrops;
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      function drawHearts() {
+        heartCtx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        heartCtx.fillRect(0, 0, heartCanvas.width, heartCanvas.height);
+        heartCtx.fillStyle = "pink";
+        heartCtx.font = heartFontSize + "px monospace";
+        for (let i = 0; i < heartDrops.length; i++) {
+          const speed = Math.random() * 0.5 + 0.5;
+          heartCtx.fillText(
+            "❤️",
+            i * heartFontSize,
+            heartDrops[i] * heartFontSize
+          );
+          if (
+            heartDrops[i] * heartFontSize > heartCanvas.height &&
+            Math.random() > 0.98
+          ) {
+            heartDrops[i] = 0;
           }
-          drops[i]++;
+          heartDrops[i] += speed;
         }
       }
 
@@ -186,9 +267,7 @@
           clearInterval(countdownInterval);
           countdownEl.style.opacity = 0;
           setTimeout(() => countdownEl.remove(), 500);
-          // Start Matrix
-          setInterval(drawMatrix, 35);
-          // Show birthday messages
+          setInterval(drawHearts, 50);
           showMessage();
         }
       }, 1000);
@@ -197,8 +276,9 @@
       const display = document.getElementById("display");
       const messages = [
         "IMG: ./happy-birthday.gif",
-        "IMG: ./cupble.jpg",
         "PHƯƠNG THẢO ❤️",
+        "Chúc em một ngày sinh nhật siêu rực rỡ! 🎉",
+        "IMG: ./cupble.jpg",
         "13.08.2025",
         "HEART",
       ];
@@ -206,12 +286,51 @@
         "Chúc em sinh nhật thật nhiều niềm vui, luôn xinh đẹp, hạnh phúc và mãi là cô gái anh yêu thương nhất 💕";
       let index = 0;
 
-      document
-        .getElementById("play-btn")
-        .addEventListener("click", function () {
-          document.getElementById("bg-music").play();
-          this.remove();
-        });
+      // Audio playback with enhanced error handling
+      const audio = document.getElementById("bg-music");
+      const playBtn = document.getElementById("play-btn");
+
+      audio.addEventListener("error", (e) => {
+        console.error("Audio file error:", e);
+        playBtn.textContent = "🎵 Lỗi tải nhạc";
+        playBtn.disabled = true;
+      });
+
+      audio.addEventListener("canplay", () => {
+        console.log("Audio file is ready to play");
+      });
+
+      playBtn.addEventListener("click", function () {
+        if (
+          typeof audio.context !== "undefined" &&
+          audio.context.state === "suspended"
+        ) {
+          audio.context.resume().then(() => {
+            console.log("Audio context resumed");
+          });
+        }
+
+        audio
+          .play()
+          .then(() => {
+            console.log("Audio playback started successfully");
+            playBtn.remove();
+          })
+          .catch((error) => {
+            console.error("Audio playback failed:", error.message);
+            playBtn.textContent = "🎵 Thử lại";
+            const errorMsg = document.createElement("div");
+            errorMsg.textContent = "Không thể phát nhạc, vui lòng thử lại!";
+            errorMsg.style.color = "red";
+            errorMsg.style.position = "fixed";
+            errorMsg.style.top = "10px";
+            errorMsg.style.left = "50%";
+            errorMsg.style.transform = "translateX(-50%)";
+            errorMsg.style.zIndex = "1000";
+            document.body.appendChild(errorMsg);
+            setTimeout(() => errorMsg.remove(), 3000);
+          });
+      });
 
       function showMessage() {
         display.classList.remove("show");
@@ -232,6 +351,17 @@
             heartText.classList.add("heart-text");
             heartText.textContent = wishText;
             heart.appendChild(heartText);
+            // Add sparkles around the heart
+            for (let i = 0; i < 6; i++) {
+              const sparkle = document.createElement("div");
+              sparkle.classList.add("sparkle");
+              const angle = (Math.PI * 2 * i) / 6;
+              const radius = Math.random() * 15 + 15;
+              sparkle.style.left = `calc(50% + ${Math.cos(angle) * radius}vw)`;
+              sparkle.style.top = `calc(50% + ${Math.sin(angle) * radius}vw)`;
+              sparkle.style.animationDelay = `${Math.random() * 0.5}s`;
+              heart.appendChild(sparkle);
+            }
             display.appendChild(heart);
           } else {
             display.textContent = messages[index];
