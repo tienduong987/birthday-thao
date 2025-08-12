@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Happy Birthday Phương Thảo</title>
+    <style>
+      body {
+        margin: 0;
+        background: black;
+        overflow: hidden;
+        font-family: monospace;
+        height: 100vh;
+        color: #0f0;
+      }
+
+      /* Canvas Matrix */
+      #matrixCanvas {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: black;
+      }
+
+      /* Countdown */
+      #countdown {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 500px;
+        color: white;
+        background: pink;
+        z-index: 10;
+        font-weight: bold;
+        transition: opacity 0.5s ease;
+      }
+
+      /* Nội dung chính */
+      .center-container {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        text-align: center;
+        z-index: 2;
+        color: white;
+      }
+      .center-text {
+        font-size: 200px;
+        font-weight: bold;
+        opacity: 0;
+        transition: opacity 1s ease-in-out;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.6);
+      }
+      .show {
+        opacity: 1;
+      }
+
+      /* Trái tim chứa câu chúc */
+      .heart-shape {
+        position: relative;
+        width: 300px;
+        height: 270px;
+        background-color: pink;
+        transform: rotate(-45deg);
+        animation: heartbeat 1.2s infinite;
+        z-index: 0;
+      }
+      .heart-shape::before,
+      .heart-shape::after {
+        content: "";
+        position: absolute;
+        width: 300px;
+        height: 270px;
+        background-color: pink;
+        border-radius: 50%;
+        z-index: 0;
+      }
+      .heart-shape::before {
+        top: -150px;
+        left: 0;
+      }
+      .heart-shape::after {
+        left: 150px;
+        top: 0;
+      }
+      .heart-text {
+        position: absolute;
+        width: 80%;
+        height: 80%;
+        top: 37%;
+        left: 62%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        font-size: 27px !important;
+        color: white;
+        text-align: center;
+        line-height: 1.4;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        z-index: 1;
+      }
+      @keyframes heartbeat {
+        0%,
+        100% {
+          transform: rotate(-45deg) scale(1);
+        }
+        50% {
+          transform: rotate(-45deg) scale(1.05);
+        }
+      }
+
+      /* Nút bật nhạc */
+      #play-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 15px;
+        font-size: 16px;
+        background: hotpink;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        z-index: 999;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="matrixCanvas"></canvas>
+
+    <div id="countdown">3</div>
+
+    <!-- Nội dung chính -->
+    <div class="center-container">
+      <div id="display" class="center-text"></div>
+    </div>
+
+    <!-- Nhạc nền -->
+    <audio id="bg-music" loop>
+      <source src="./cmsn.mp3" type="audio/mpeg" />
+    </audio>
+    <button id="play-btn">🎵 Bật nhạc</button>
+
+    <script>
+      const canvas = document.getElementById("matrixCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+
+      // Matrix setup
+      const letters = "HAPPY BIRTHDAY ".split("");
+      const fontSize = 14;
+      const columns = canvas.width / fontSize;
+      const drops = Array(Math.floor(columns)).fill(1);
+
+      function drawMatrix() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0F0";
+        ctx.font = fontSize + "px monospace";
+        for (let i = 0; i < drops.length; i++) {
+          const text = letters[Math.floor(Math.random() * letters.length)];
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+          if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+            drops[i] = 0;
+          }
+          drops[i]++;
+        }
+      }
+
+      // Countdown
+      let count = 3;
+      const countdownEl = document.getElementById("countdown");
+      const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdownEl.textContent = count;
+        } else {
+          clearInterval(countdownInterval);
+          countdownEl.style.opacity = 0;
+          setTimeout(() => countdownEl.remove(), 500);
+          // Start Matrix
+          setInterval(drawMatrix, 35);
+          // Show birthday messages
+          showMessage();
+        }
+      }, 1000);
+
+      // Messages
+      const display = document.getElementById("display");
+      const messages = [
+        "IMG: ./happy-birthday.gif",
+        "IMG: ./cupble.jpg",
+        "PHƯƠNG THẢO ❤️",
+        "13.08.2025",
+        "HEART",
+      ];
+      const wishText =
+        "Chúc em sinh nhật thật nhiều niềm vui, luôn xinh đẹp, hạnh phúc và mãi là cô gái anh yêu thương nhất 💕";
+      let index = 0;
+
+      document
+        .getElementById("play-btn")
+        .addEventListener("click", function () {
+          document.getElementById("bg-music").play();
+          this.remove();
+        });
+
+      function showMessage() {
+        display.classList.remove("show");
+        setTimeout(() => {
+          display.innerHTML = "";
+
+          if (messages[index].startsWith("IMG:")) {
+            const img = document.createElement("img");
+            img.src = messages[index].replace("IMG:", "").trim();
+            img.style.maxWidth = "80%";
+            img.style.height = "auto";
+            img.style.borderRadius = "15px";
+            display.appendChild(img);
+          } else if (messages[index] === "HEART") {
+            const heart = document.createElement("div");
+            heart.classList.add("heart-shape");
+            const heartText = document.createElement("div");
+            heartText.classList.add("heart-text");
+            heartText.textContent = wishText;
+            heart.appendChild(heartText);
+            display.appendChild(heart);
+          } else {
+            display.textContent = messages[index];
+          }
+
+          display.classList.add("show");
+          index++;
+          if (index < messages.length) {
+            setTimeout(showMessage, 2500);
+          }
+        }, 1000);
+      }
+    </script>
+  </body>
+</html>
